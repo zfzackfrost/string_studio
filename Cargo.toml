@@ -3,6 +3,7 @@ name = "string_studio"
 description = "Random string generator for faster and consistant naming when writing content."
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/zfzackfrost/string_studio"
 version = "0.1.0"
 authors = ["Zachary Frost"]
 edition = "2018"
