@@ -42,7 +42,7 @@ fn process_args() -> Result<Config, String> {
                 .help("Sets the number of strings to generate")
                 .takes_value(true)
                 .validator(require_u32_str)
-                .default_value("12"),
+                .default_value("15"),
         )
         .arg(
             Arg::with_name("config")
@@ -69,8 +69,9 @@ fn process_args() -> Result<Config, String> {
         .arg(
             Arg::with_name("pattern")
                 .value_name("PATTERN")
-                .help("Sets the pattern generate strings from.")
+                .help("Sets the pattern generate strings from. If multiple values are supplied, they will be concatenated. Pattern fragments must be separate values (one argument for each fragment).")
                 .required_unless("config")
+                .multiple(true)
                 .index(1),
         )
         .arg(
@@ -104,13 +105,15 @@ fn process_args() -> Result<Config, String> {
 
         let verbosity = matches.occurrences_of("verbosity") as u8;
         let pretty = matches.is_present("pretty");
+        let pattern = matches.values_of_lossy("pattern").unwrap_or(vec![]);
 
         let cmd_config = Config {
             format: OutputFormat::from(format.unwrap()),
             number: num,
             verbosity: Verbosity::from(verbosity),
-            pattern: String::from(matches.value_of("pattern").unwrap_or("")),
-            pretty: pretty
+            pattern: pattern.clone(),
+            pretty: pretty,
+            fragments: Default::default(),
         };
         
         let cfg = if let Some(cfg_path) = matches.value_of("config") {
@@ -124,7 +127,7 @@ fn process_args() -> Result<Config, String> {
                         c.pretty = true;
                     }
                     if matches.is_present("pattern") {
-                        c.pattern = String::from(matches.value_of("pattern").unwrap());
+                        c.pattern = pattern;
                     }
 
                     c

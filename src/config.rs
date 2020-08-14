@@ -1,14 +1,18 @@
 mod output_format;
 mod verbose;
+mod fragment;
 
 use std::fmt::{self, Display};
 
 pub use self::output_format::*;
 pub use self::verbose::*;
+pub use self::fragment::*;
 
 use termion::color::{Fg, Red, Reset as ResetColor};
 
 use serde::{Deserialize, Serialize};
+
+
 
 fn default_format() -> OutputFormat {
     OutputFormat::Simple
@@ -19,8 +23,8 @@ fn default_verbosity() -> Verbosity {
 fn default_number() -> u32 {
     12
 }
-fn default_pattern() -> String {
-    String::from("")
+fn default_pattern() -> Vec<String> {
+    vec![String::from("")]
 }
 fn default_pretty() -> bool {
     false
@@ -38,10 +42,13 @@ pub struct Config {
     pub verbosity: Verbosity,
 
     #[serde(default = "default_pattern")]
-    pub pattern: String,
+    pub pattern: Vec<String>,
 
     #[serde(default = "default_pretty")]
     pub pretty: bool,
+    
+    #[serde(default)]
+    pub fragments: Vec<Fragment>,
 }
 
 impl Display for Config {
