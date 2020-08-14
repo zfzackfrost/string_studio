@@ -1,5 +1,4 @@
 use crate::config::*;
-use prettytable::{Cell, Row, Table};
 
 pub fn output_simple(_config: &Config, strings: &Vec<String>) -> Result<(), String> {
     for s in strings {
@@ -8,7 +7,9 @@ pub fn output_simple(_config: &Config, strings: &Vec<String>) -> Result<(), Stri
     Ok(())
 }
 
+#[cfg(feature = "table_format")]
 pub fn output_table(_config: &Config, strings: &Vec<String>) -> Result<(), String> {
+    use prettytable::{Cell, Row, Table};
     // Create the table
     let mut table = Table::new();
 
@@ -42,8 +43,9 @@ pub fn output_csv(_config: &Config, strings: &Vec<String>) -> Result<(), String>
 }
 pub fn output(config: &Config, strings: &Vec<String>) -> Result<(), String> {
     match config.format {
-        OutputFormat::Simple => output_simple(config, strings),
+        #[cfg(feature = "table_format")]
         OutputFormat::Table => output_table(config, strings),
+        OutputFormat::Simple => output_simple(config, strings),
         OutputFormat::Json => output_json(config, strings),
         OutputFormat::Csv => output_csv(config, strings),
     }

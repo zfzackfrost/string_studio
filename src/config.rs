@@ -8,7 +8,6 @@ pub use self::output_format::*;
 pub use self::verbose::*;
 pub use self::fragment::*;
 
-use termion::color::{Fg, Red, Reset as ResetColor};
 
 use serde::{Deserialize, Serialize};
 
@@ -66,8 +65,14 @@ pub fn println_verbosity(verbosity: Verbosity, config: &Config, message: &str) {
     }
 }
 
+#[cfg(feature = "color_messages")]
 pub fn println_err(message: &str) {
+    use termion::color::{Fg, Red, Reset as ResetColor};
     println!("{}{}{}", Fg(Red), message, Fg(ResetColor));
+}
+#[cfg(not(feature = "color_messages"))]
+pub fn println_err(message: &str) {
+    println!("{}", message);
 }
 pub fn println_v0(config: &Config, message: &str) {
     println_verbosity(Verbosity::NotVerbose, config, message);

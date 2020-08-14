@@ -11,14 +11,24 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+# Required
 serde = { version = "1.0", features = ["derive"] }
-serde_derive = "1.0"
-serde_regex = "1.1.0"
-serde_json = "1.0"
-toml = "0.5.6"
-clap = "2.33"
-rand_regex = "0.14.2"
-rand = "0.7.3"
-rand_xorshift = "0.2.0"
-prettytable-rs = "0.8.0"
-termion = "1.5"
+serde_json = { version = "1.0" }
+toml = { version = "0.5" }
+clap = { version = "2.33" }
+rand_regex = { version = "0.14" }
+rand = { version = "0.7" }
+rand_xorshift = { version = "0.2" }
+
+# Optional
+termion = { version = "1.5", optional = true }
+prettytable-rs = { version = "0.8", optional = true }
+
+
+[features]
+
+default = ["color_messages"]
+
+color_messages = ["termion"]
+table_format = ["prettytable-rs"]

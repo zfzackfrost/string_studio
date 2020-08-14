@@ -60,10 +60,11 @@ fn process_args() -> Result<Config, String> {
                 .value_name("FORMAT")
                 .help("Sets the output format")
                 .takes_value(true)
-                .possible_value("simple")
-                .possible_value("table")
-                .possible_value("json")
-                .possible_value("csv")
+                .possible_values(if cfg!(feature = "table_format") {
+                    &["simple", "table", "json", "csv"]
+                } else {
+                    &["simple", "json", "csv"]
+                })
                 .default_value("simple"),
         )
         .arg(

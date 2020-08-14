@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize)]
 pub enum OutputFormat {
     Simple,
+    #[cfg(feature = "table_format")]
     Table,
     Json,
     Csv,
@@ -13,6 +14,7 @@ pub enum OutputFormat {
 impl From<&str> for OutputFormat {
     fn from(fmt: &str) -> Self {
         match fmt {
+            #[cfg(feature = "table_format")]
             "table" => Self::Table,
             "json" => Self::Json,
             "csv" => Self::Csv,
@@ -24,8 +26,9 @@ impl From<&str> for OutputFormat {
 impl Display for OutputFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Simple => write!(f, "Simple"),
+            #[cfg(feature = "table_format")]
             Self::Table => write!(f, "Table"),
+            Self::Simple => write!(f, "Simple"),
             Self::Json => write!(f, "Json"),
             Self::Csv => write!(f, "Csv"),
         }
