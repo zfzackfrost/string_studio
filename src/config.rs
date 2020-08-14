@@ -22,9 +22,6 @@ fn default_verbosity() -> Verbosity {
 fn default_number() -> u32 {
     12
 }
-fn default_pattern() -> Vec<String> {
-    vec![String::from("")]
-}
 fn default_pretty() -> bool {
     false
 }
@@ -40,7 +37,7 @@ pub struct Config {
     #[serde(default = "default_verbosity")]
     pub verbosity: Verbosity,
 
-    #[serde(default = "default_pattern")]
+    #[serde(default)]
     pub pattern: Vec<String>,
 
     #[serde(default = "default_pretty")]
@@ -56,6 +53,19 @@ impl Display for Config {
             write!(f, "{}", s)?;
         }
         Ok(())
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            format: default_format(),
+            number: default_number(),
+            verbosity: default_verbosity(),
+            pattern: Default::default(),
+            pretty: default_pretty(),
+            fragments: Default::default()
+        }
     }
 }
 
