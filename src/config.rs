@@ -10,12 +10,37 @@ use termion::color::{Fg, Red, Reset as ResetColor};
 
 use serde::{Deserialize, Serialize};
 
+fn default_format() -> OutputFormat {
+    OutputFormat::Simple
+}
+fn default_verbosity() -> Verbosity {
+    Verbosity::NotVerbose
+}
+fn default_number() -> u32 {
+    12
+}
+fn default_pattern() -> String {
+    String::from("")
+}
+fn default_pretty() -> bool {
+    false
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default = "default_format")]
     pub format: OutputFormat,
+
+    #[serde(default = "default_number")]
     pub number: u32,
+
+    #[serde(default = "default_verbosity")]
     pub verbosity: Verbosity,
+
+    #[serde(default = "default_pattern")]
     pub pattern: String,
+
+    #[serde(default = "default_pretty")]
     pub pretty: bool,
 }
 

@@ -4,6 +4,9 @@ use string_studio::config::*;
 use string_studio::generate::*;
 use string_studio::output::*;
 
+use std::fs;
+use std::path::Path;
+
 fn require_parsed_str<I: FromStr>(v: String, message: &str) -> Result<(), String> {
     if let Ok(_) = v.parse::<I>() {
         Ok(())
@@ -12,8 +15,18 @@ fn require_parsed_str<I: FromStr>(v: String, message: &str) -> Result<(), String
     }
 }
 
+
 fn require_u32_str(v: String) -> Result<(), String> {
     require_parsed_str::<u32>(v, "The value was not an integer or was out of range")
+}
+
+fn require_existing_file(v: String) -> Result<(), String> {
+    let p = Path::new(&v);
+    if !p.is_file() {
+        Err(String::from("The value was not a path to an existing file"))
+    } else {
+        Ok(())
+    }
 }
 
 fn process_args() -> Result<Config, String> {
@@ -32,6 +45,15 @@ fn process_args() -> Result<Config, String> {
                 .default_value("12"),
         )
         .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .help("Sets the config file to load flag and option values from. Values specified as command line args take priority.")
+                .takes_value(true)
+                .validator(require_existing_file)
+        )
+        .arg(
             Arg::with_name("format")
                 .short("f")
                 .long("format")
@@ -48,7 +70,7 @@ fn process_args() -> Result<Config, String> {
             Arg::with_name("pattern")
                 .value_name("PATTERN")
                 .help("Sets the pattern generate strings from.")
-                .required(true)
+                .required_unless("config")
                 .index(1),
         )
         .arg(
@@ -78,19 +100,44 @@ fn process_args() -> Result<Config, String> {
                 "No value found for `format`! This should not happen.",
             ));
         }
-        let format = format.unwrap();
+        
 
         let verbosity = matches.occurrences_of("verbosity") as u8;
-
         let pretty = matches.is_present("pretty");
 
-        Ok(Config {
-            format: OutputFormat::from(format),
+        let cmd_config = Config {
+            format: OutputFormat::from(format.unwrap()),
             number: num,
             verbosity: Verbosity::from(verbosity),
-            pattern: String::from(matches.value_of("pattern").unwrap()),
+            pattern: String::from(matches.value_of("pattern").unwrap_or("")),
             pretty: pretty
-        })
+        };
+        
+        let cfg = if let Some(cfg_path) = matches.value_of("config") {
+            if let Ok(s) = fs::read_to_string(cfg_path) {
+                if let Ok(mut c) = toml::from_str::<Config>(s.as_str()) {
+                    c.verbosity = Verbosity::from(verbosity);
+                    if matches.occurrences_of("format") > 0 {
+                        c.format = OutputFormat::from(format.unwrap());
+                    }
+                    if matches.is_present("pretty") {
+                        c.pretty = true;
+                    }
+                    if matches.is_present("pattern") {
+                        c.pattern = String::from(matches.value_of("pattern").unwrap());
+                    }
+
+                    c
+                } else {
+                    return Err(String::from("Failed to parse config file!"));
+                }
+            } else {
+                cmd_config
+            }
+        } else {
+            cmd_config
+        };
+        Ok(cfg)
     }
 }
 
@@ -100,7 +147,7 @@ fn run() -> Result<(), String> {
     println_v2(&config, format!("Full Configuration: {}", config).as_str());
     println_v1(
         &config,
-        format!("Generating {} strings...", config.number).as_str(),
+        format!("Generating {} strings...\n", config.number).as_str(),
     );
 
     let strings = generate(&config)?;
