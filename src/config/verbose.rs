@@ -1,6 +1,8 @@
 use std::fmt::{self, Display};
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize)]
 pub enum Verbosity {
     NotVerbose,
     Verbose,

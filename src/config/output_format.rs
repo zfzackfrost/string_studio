@@ -1,6 +1,8 @@
 use std::fmt::{self, Display};
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, PartialEq)]
+#[derive(Serialize, Deserialize)]
 pub enum OutputFormat {
     Simple,
     Table,

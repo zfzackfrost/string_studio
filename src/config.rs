@@ -6,24 +6,25 @@ use std::fmt::{self, Display};
 pub use self::output_format::*;
 pub use self::verbose::*;
 
-use termion::color::{Fg, Reset as ResetColor, Red};
+use termion::color::{Fg, Red, Reset as ResetColor};
 
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub format: OutputFormat,
     pub number: u32,
     pub verbosity: Verbosity,
     pub pattern: String,
-    pub pretty: bool
+    pub pretty: bool,
 }
 
 impl Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            r#"[pattern: "{}", pretty: {}, format: {}; number: {}; verbosity: {}]"#,
-            self.pattern, self.pretty, self.format, self.number, self.verbosity
-        )
+        if let Ok(s) = serde_json::to_string(self) {
+            write!(f, "{}", s)?;
+        }
+        Ok(())
     }
 }
 

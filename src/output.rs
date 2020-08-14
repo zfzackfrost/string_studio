@@ -23,19 +23,17 @@ pub fn output_table(_config: &Config, strings: &Vec<String>) -> Result<(), Strin
     Ok(())
 }
 pub fn output_json(config: &Config, strings: &Vec<String>) -> Result<(), String> {
-    let mut value = json::JsonValue::new_array();
-    for s in strings {
-        let r = value.push(json::JsonValue::from(s.clone()));
-        if let Err(_) = r {
-            return Err(String::from("Unknown JSON stringify error!"));
-        }
-    }
-    if config.pretty {
-        println!("{}", value.pretty(2));
+    let s = if config.pretty {
+        serde_json::to_string_pretty(strings)
     } else {
-        println!("{}", value.dump());
+        serde_json::to_string(strings)
+    };
+    if let Ok(s) = s {
+        println!("{}", s);
+        Ok(())
+    } else {
+        Err(String::from("Unknown JSON error!"))
     }
-    Ok(())
 }
 pub fn output_csv(_config: &Config, strings: &Vec<String>) -> Result<(), String> {
     let csv = strings.join(",");
