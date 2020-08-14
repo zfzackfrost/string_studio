@@ -15,7 +15,6 @@ fn require_parsed_str<I: FromStr>(v: String, message: &str) -> Result<(), String
     }
 }
 
-
 fn require_u32_str(v: String) -> Result<(), String> {
     require_parsed_str::<u32>(v, "The value was not an integer or was out of range")
 }
@@ -102,7 +101,6 @@ fn process_args() -> Result<Config, String> {
                 "No value found for `format`! This should not happen.",
             ));
         }
-        
 
         let verbosity = matches.occurrences_of("verbosity") as u8;
         let pretty = matches.is_present("pretty");
@@ -116,19 +114,17 @@ fn process_args() -> Result<Config, String> {
             pretty: pretty,
             fragments: Default::default(),
         };
-        
         let cfg = if let Some(cfg_path) = matches.value_of("config") {
             if let Ok(s) = fs::read_to_string(cfg_path) {
                 if let Ok(mut c) = toml::from_str::<Config>(s.as_str()) {
-                    c.verbosity = Verbosity::from(verbosity);
+                    c.verbosity = Verbosity::from(verbosity); // Ignore verbosity in config file
+                    c.pattern = pattern; // Ignore pattern in config file
+
                     if matches.occurrences_of("format") > 0 {
                         c.format = OutputFormat::from(format.unwrap());
                     }
                     if matches.is_present("pretty") {
                         c.pretty = true;
-                    }
-                    if matches.is_present("pattern") {
-                        c.pattern = pattern;
                     }
 
                     c
