@@ -8,6 +8,16 @@ pub struct Fragment {
     pub description: String,
 }
 
+impl Fragment {
+    pub fn new(name: &str, pattern: &str, description: &str) -> Self {
+        Self {
+            name: String::from(name),
+            pattern: String::from(pattern),
+            description: String::from(description),
+        }
+    }
+}
+
 impl Default for Fragment {
     fn default() -> Self {
         Self {

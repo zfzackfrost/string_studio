@@ -28,7 +28,37 @@ fn require_existing_file(v: String) -> Result<(), String> {
     }
 }
 
+fn create_config() -> Result<(), String>{
+    if let Some(path) = get_cfg_file_path() {
+        if path.is_file() {
+            return Ok(());
+        }
+        let config = Config::default();
+        let dir = path.parent();
+        if dir.is_none() {
+            return Err(String::from("Could not find directory portion of config file path!"));
+        }
+        let dir = dir.unwrap();
+        if !dir.is_dir() {
+            if let Err(err) = std::fs::create_dir_all(path.parent().unwrap()) {
+                return Err(err.to_string())
+            }
+        }
+        if let Ok(contents) = toml::to_string_pretty(&config) {
+            if let Err(err) = std::fs::write(path, contents) {
+                return Err(err.to_string())
+            }
+        } else {
+            return Err(String::from("Error serializing default config!"))
+        }
+    }
+    Ok(())
+}
+
 fn process_args() -> Result<Config, String> {
+    
+    let cfg_path = get_cfg_file_path();
+
     let matches = App::new("String Builder")
         .version("0.1.0")
         .author("Zachary Frost")
@@ -44,13 +74,21 @@ fn process_args() -> Result<Config, String> {
                 .default_value("15"),
         )
         .arg(
-            Arg::with_name("config")
+            {
+                
+            let mut a = Arg::with_name("config")
                 .short("c")
                 .long("config")
                 .value_name("FILE")
                 .help("Sets the config file to load flag and option values from. Values specified as command line args take priority.")
                 .takes_value(true)
-                .validator(require_existing_file)
+                .validator(require_existing_file);
+                
+                if let Some(cfg_path) = &cfg_path {
+                    a = a.default_value(cfg_path.to_str().unwrap())
+                }
+                a
+            }
         )
         .arg(
             Arg::with_name("format")
@@ -142,6 +180,7 @@ fn process_args() -> Result<Config, String> {
 }
 
 fn run() -> Result<(), String> {
+    create_config()?;
     let config = process_args()?;
 
     println_v2(&config, format!("Full Configuration: {}", config).as_str());

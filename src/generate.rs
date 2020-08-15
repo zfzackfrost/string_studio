@@ -1,5 +1,11 @@
+pub mod regex_gen;
+
 use crate::config::Config;
-use rand::{Rng, SeedableRng};
+
+use rand::prelude::*;
+use rand_pcg::Pcg64;
+
+use self::regex_gen::RegexGen;
 
 fn assemble_pattern(config: &Config) -> Result<String, String> {
     let mut pat = String::new();
@@ -25,16 +31,18 @@ fn assemble_pattern(config: &Config) -> Result<String, String> {
 
 pub fn generate(config: &Config) -> Result<Vec<String>, String> {
     let pat = assemble_pattern(config)?;
-    let mut rng = rand_xorshift::XorShiftRng::from_entropy();
-    let gen = rand_regex::Regex::compile(&pat, 100);
+    let mut rng = Pcg64::from_entropy();
+    if let Some(gen) = RegexGen::new(&pat) {
+        let mut strings: Vec<String> = Vec::new();
 
-    if let Ok(gen) = gen {
-        let strings: Vec<_> = (&mut rng)
-            .sample_iter(&gen)
-            .take(config.number as usize)
-            .collect();
+        for _ in 0 .. config.number {
+            match gen.randomize(&mut rng) {
+                Ok(s) => strings.push(s),
+                Err(_) => return Err(String::from("Failed to generate string!"))
+            }
+        }
         Ok(strings)
     } else {
-        Err(String::from("Invalid pattern!"))
+        Err(String::from("Failed to parse pattern!"))
     }
 }
