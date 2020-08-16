@@ -1,7 +1,6 @@
 use regex::{Captures, Regex};
 use serde::{Deserialize, Serialize};
 pub use std::convert::TryFrom;
-use inflector::cases::titlecase;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Xform {
@@ -28,7 +27,25 @@ impl Xform {
     }
 
     fn xform_titlecase(s: &str) -> String {
-        titlecase::to_title_case(s)
+        lazy_static! {
+            static ref TITLECASE_RE: Regex = Regex::new(r"\b(\w)(\w*)\b").unwrap();
+        }
+
+        let do_replace = |caps: &Captures| -> String {
+            if let Some(s) = caps.get(1) {
+                let s1 = s.as_str().to_uppercase();
+                let s2 = if let Some(s2) = caps.get(2) {
+                    s2.as_str()
+                } else {
+                    ""
+                };
+                format!("{}{}", s1, s2)
+            } else {
+                String::from(caps.get(0).unwrap().as_str())
+            }
+        };
+
+        (*TITLECASE_RE).replace_all(s, do_replace).into_owned()
     }
     pub fn xform(&self, s: &str) -> String {
         match self {
