@@ -65,7 +65,7 @@ fn create_config() -> Result<(), String> {
 fn process_args() -> Result<Config, String> {
     let cfg_path = get_cfg_file_path();
 
-    let matches = App::new("String Builder")
+    let matches = App::new("String Studio")
         .version("0.1.0")
         .author("Zachary Frost")
         .about("Generate randomized strings")
