@@ -7,27 +7,6 @@ use rand_xoshiro::Xoshiro512StarStar;
 
 use self::regex_gen::RegexGen;
 
-fn assemble_pattern(config: &Config) -> Result<String, String> {
-    let mut pat = String::new();
-    for p in &config.pattern {
-        if p.starts_with("@") && p.ends_with("@") {
-            let p_name = p.strip_suffix("@").unwrap().strip_prefix("@").unwrap();
-            pat += &{
-                let mut s: String = Default::default();
-                for i in &config.fragments {
-                    if i.name == p_name {
-                        s = i.pattern.clone();
-                        break;
-                    }
-                }
-                s.clone()
-            };
-        } else {
-            pat += &p;
-        }
-    }
-    Ok(pat)
-}
 fn apply_xforms(config: &Config, s: String) -> String {
     let mut s = s;
     for x in &config.xforms {
@@ -37,7 +16,7 @@ fn apply_xforms(config: &Config, s: String) -> String {
 }
 
 pub fn generate(config: &Config) -> Result<Vec<String>, String> {
-    let pat = assemble_pattern(config)?;
+    let pat = config.pattern.assemble_pattern(&config.fragments)?;
     let mut rng = if config.seed == 0 {
         Xoshiro512StarStar::from_entropy()
     } else {

@@ -22,7 +22,7 @@ fn create_config(overwrite: bool) -> Result<(), String> {
                 return Err(err.to_string());
             }
         }
-        if let Ok(contents) = toml::to_string_pretty(&config) {
+        if let Ok(contents) = serde_json::to_string_pretty(&config) {
             if let Err(err) = std::fs::write(path, contents) {
                 return Err(err.to_string());
             }

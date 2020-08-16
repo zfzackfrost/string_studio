@@ -185,7 +185,8 @@ pub fn process_args() -> Result<(AppAction, Config), String> {
             .unwrap_or("")
             .parse::<u64>()
             .unwrap_or(0);
-
+    
+        let pattern = CompositePattern::from(pattern.as_slice());
         let cmd_config = Config {
             format: OutputFormat::from(format.unwrap()),
             number: num,
@@ -198,9 +199,9 @@ pub fn process_args() -> Result<(AppAction, Config), String> {
         };
         let cfg = if let Some(cfg_path) = matches.value_of("config") {
             if let Ok(s) = fs::read_to_string(cfg_path) {
-                if let Ok(mut c) = toml::from_str::<Config>(s.as_str()) {
+                if let Ok(mut c) = serde_json::from_str::<Config>(s.as_str()) {
                     c.verbosity = Verbosity::from(verbosity); // Ignore verbosity in config file
-                    c.pattern = pattern; // Ignore pattern in config file
+                    c.pattern = pattern.clone(); // Ignore pattern in config file
                     c.seed = seed; // Ignore seed in config file
                     c.xforms = xforms;
                     c.number = num;
