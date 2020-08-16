@@ -1,4 +1,4 @@
-use rand::distributions::{Distribution, Standard, Uniform};
+use rand::distributions::{Distribution, Uniform};
 use rand::prelude::*;
 use regex_syntax::hir::{self, Hir, HirKind};
 use regex_syntax::Parser;
@@ -128,9 +128,8 @@ fn randomize_unicode_class<R: Rng + RngCore>(
             }
         }
     }
-    chars.shuffle(rstate.rng);
 
-    Ok(String::from_iter([chars[0]].iter()))
+    Ok(String::from_iter(&[*chars.choose(rstate.rng).unwrap()]))
 }
 
 fn randomize_class<R: Rng + RngCore>(
@@ -205,10 +204,10 @@ impl RegexGen {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand_pcg::Pcg64;
+    use rand_xoshiro::Xoshiro256StarStar;
     #[test]
     fn hir_randomize_test() {
-        let mut rng = Pcg64::seed_from_u64(0);
+        let mut rng = Xoshiro256StarStar::seed_from_u64(0);
         let gen = RegexGen::new("([a-zA-Z]){1,3}").unwrap();
         if let Ok(s) = gen.randomize(&mut rng) {
             println!("{}", s);

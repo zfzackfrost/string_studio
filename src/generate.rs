@@ -3,7 +3,7 @@ pub mod regex_gen;
 use crate::config::Config;
 
 use rand::prelude::*;
-use rand_pcg::Pcg64;
+use rand_xoshiro::Xoshiro512StarStar;
 
 use self::regex_gen::RegexGen;
 
@@ -31,7 +31,11 @@ fn assemble_pattern(config: &Config) -> Result<String, String> {
 
 pub fn generate(config: &Config) -> Result<Vec<String>, String> {
     let pat = assemble_pattern(config)?;
-    let mut rng = Pcg64::from_entropy();
+    let mut rng = if config.seed == 0 {
+        Xoshiro512StarStar::from_entropy()
+    } else {
+        Xoshiro512StarStar::seed_from_u64(config.seed)
+    };
     if let Some(gen) = RegexGen::new(&pat) {
         let mut strings: Vec<String> = Vec::new();
 

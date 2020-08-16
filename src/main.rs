@@ -18,6 +18,9 @@ fn require_parsed_str<I: FromStr>(v: String, message: &str) -> Result<(), String
 fn require_u32_str(v: String) -> Result<(), String> {
     require_parsed_str::<u32>(v, "The value was not an integer or was out of range")
 }
+fn require_u64_str(v: String) -> Result<(), String> {
+    require_parsed_str::<u64>(v, "The value was not an integer or was out of range")
+}
 
 fn require_existing_file(v: String) -> Result<(), String> {
     let p = Path::new(&v);
@@ -28,7 +31,7 @@ fn require_existing_file(v: String) -> Result<(), String> {
     }
 }
 
-fn create_config() -> Result<(), String>{
+fn create_config() -> Result<(), String> {
     if let Some(path) = get_cfg_file_path() {
         if path.is_file() {
             return Ok(());
@@ -36,27 +39,28 @@ fn create_config() -> Result<(), String>{
         let config = Config::default();
         let dir = path.parent();
         if dir.is_none() {
-            return Err(String::from("Could not find directory portion of config file path!"));
+            return Err(String::from(
+                "Could not find directory portion of config file path!",
+            ));
         }
         let dir = dir.unwrap();
         if !dir.is_dir() {
             if let Err(err) = std::fs::create_dir_all(path.parent().unwrap()) {
-                return Err(err.to_string())
+                return Err(err.to_string());
             }
         }
         if let Ok(contents) = toml::to_string_pretty(&config) {
             if let Err(err) = std::fs::write(path, contents) {
-                return Err(err.to_string())
+                return Err(err.to_string());
             }
         } else {
-            return Err(String::from("Error serializing default config!"))
+            return Err(String::from("Error serializing default config!"));
         }
     }
     Ok(())
 }
 
 fn process_args() -> Result<Config, String> {
-    
     let cfg_path = get_cfg_file_path();
 
     let matches = App::new("String Builder")
@@ -74,16 +78,24 @@ fn process_args() -> Result<Config, String> {
                 .default_value("15"),
         )
         .arg(
-            {
-                
-            let mut a = Arg::with_name("config")
-                .short("c")
-                .long("config")
-                .value_name("FILE")
-                .help("Sets the config file to load flag and option values from. Values specified as command line args take priority.")
+            Arg::with_name("seed")
+                .long("seed")
+                .value_name("INTEGER")
+                .help("Sets the random seed to use when generating strings. Set to 0 to auto pick seed.")
                 .takes_value(true)
-                .validator(require_existing_file);
-                
+                .validator(require_u64_str)
+                .default_value("0"),
+        )
+        .arg(
+            {
+                let mut a = Arg::with_name("config")
+                    .short("c")
+                    .long("config")
+                    .value_name("FILE")
+                    .help("Sets the config file to load flag and option values from. Values specified as command line args take priority.")
+                    .takes_value(true)
+                    .validator(require_existing_file);
+
                 if let Some(cfg_path) = &cfg_path {
                     a = a.default_value(cfg_path.to_str().unwrap())
                 }
@@ -143,6 +155,11 @@ fn process_args() -> Result<Config, String> {
         let verbosity = matches.occurrences_of("verbosity") as u8;
         let pretty = matches.is_present("pretty");
         let pattern = matches.values_of_lossy("pattern").unwrap_or(vec![]);
+        let seed = matches
+            .value_of("seed")
+            .unwrap_or("")
+            .parse::<u64>()
+            .unwrap_or(0);
 
         let cmd_config = Config {
             format: OutputFormat::from(format.unwrap()),
@@ -151,12 +168,14 @@ fn process_args() -> Result<Config, String> {
             pattern: pattern.clone(),
             pretty: pretty,
             fragments: Default::default(),
+            seed,
         };
         let cfg = if let Some(cfg_path) = matches.value_of("config") {
             if let Ok(s) = fs::read_to_string(cfg_path) {
                 if let Ok(mut c) = toml::from_str::<Config>(s.as_str()) {
                     c.verbosity = Verbosity::from(verbosity); // Ignore verbosity in config file
                     c.pattern = pattern; // Ignore pattern in config file
+                    c.seed = seed; // Ignore seed in config file
 
                     if matches.occurrences_of("format") > 0 {
                         c.format = OutputFormat::from(format.unwrap());

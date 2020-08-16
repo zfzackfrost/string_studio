@@ -32,17 +32,18 @@ fn default_fragments() -> Vec<Fragment> {
         static ref UPPER_VOWELS_RE: String = String::from("(A|E|I|O|U)");
         static ref LOWER_VOWELS_Y_RE: String = String::from("(a|e|i|o|u|y)");
         static ref UPPER_VOWELS_Y_RE: String = String::from("(A|E|I|O|U|Y)");
-        static ref LOWER_CONS_RE: String = String::from("(b|c|d|f|g|h|j|k|l|m|n|p|qu|r|s|t|v|w|x|y|z)");
-        static ref UPPER_CONS_RE: String = String::from("(B|C|D|F|G|H|J|K|L|M|N|P|Qu|R|S|T|V|W|X|Y|Z)");
-        static ref SYLLABLE_RE: String = format!("({}{}{}?)", *LOWER_CONS_RE, *LOWER_VOWELS_Y_RE, *LOWER_CONS_RE);
+        static ref LOWER_CONS_RE: String = String::from("(b|c|d|f|g|h|j|k|l|m|n|p|q|r|s|t|v|w|x|y|z)");
+        static ref UPPER_CONS_RE: String = String::from("(B|C|D|F|G|H|J|K|L|M|N|P|Q|R|S|T|V|W|X|Y|Z)");
+        static ref VOWEL_CLUSTER_RE: String = String::from("(ae|ai|ou|ia|ei|ou|ou|ui|iu|ea|oi|ua|au|ao|oa|ee|oo)");
+        static ref SYLLABLE_RE: String = format!("({}({}|{}){}?)", *LOWER_CONS_RE, *VOWEL_CLUSTER_RE, *LOWER_VOWELS_RE, *LOWER_CONS_RE);
     }
     vec![
         Fragment::new("lower_vowel", &(*LOWER_VOWELS_RE), "Lowercase vowels, excluding `y`"),
         Fragment::new("upper_vowel", &(*UPPER_VOWELS_RE), "Uppercase vowels, excluding `y`"),
         Fragment::new("lower_vowel_y", &(*LOWER_VOWELS_Y_RE), "Lowercase vowels, including `y`"),
         Fragment::new("upper_vowel_y", &(*UPPER_VOWELS_Y_RE), "Uppercase vowels, including `y`"),
-        Fragment::new("lower_cons", &(*LOWER_CONS_RE), "Lowercase consonants, with `qu` cluster."),
-        Fragment::new("upper_cons", &(*UPPER_CONS_RE), "Uppercase consonants, with `Qu` cluster."),
+        Fragment::new("lower_cons", &(*LOWER_CONS_RE), "Lowercase consonants."),
+        Fragment::new("upper_cons", &(*UPPER_CONS_RE), "Uppercase consonants."),
         Fragment::new("syllable", &(*SYLLABLE_RE), "A basic syllable."),
     ]
 }
@@ -51,7 +52,7 @@ fn default_fragments() -> Vec<Fragment> {
 pub struct Config {
     #[serde(default = "default_format")]
     pub format: OutputFormat,
-
+    
     #[serde(default = "default_number")]
     pub number: u32,
 
@@ -64,6 +65,9 @@ pub struct Config {
     #[serde(default = "default_pretty")]
     pub pretty: bool,
     
+    #[serde(default, skip)]
+    pub seed: u64,
+
     #[serde(default)]
     pub fragments: Vec<Fragment>,
 }
@@ -85,6 +89,7 @@ impl Default for Config {
             verbosity: default_verbosity(),
             pattern: Default::default(),
             pretty: default_pretty(),
+            seed: 0,
             fragments: default_fragments()
         }
     }

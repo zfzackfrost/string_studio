@@ -19,7 +19,7 @@ serde_json = { version = "1.0" }
 toml = { version = "0.5" }
 clap = { version = "2.33" }
 rand = { version = "0.7" }
-rand_pcg = { version = "*" }
+rand_xoshiro = { version = "0.4.0" }
 encoding = {version = "0.2.33"}
 lazy_static = {version = "1.4"}
 regex-syntax = { version = "0.6.18" }
