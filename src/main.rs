@@ -81,6 +81,7 @@ fn process_args() -> Result<(AppAction, Config), String> {
                 let mut a = Arg::with_name("config")
                     .short("c")
                     .long("config")
+                    .global(true)
                     .value_name("FILE")
                     .help("Sets the config file to load flag and option values from. Values specified as command line args take priority.")
                     .takes_value(true)
@@ -96,6 +97,7 @@ fn process_args() -> Result<(AppAction, Config), String> {
             Arg::with_name("verbosity")
                 .short("v")
                 .multiple(true)
+                .global(true)
                 .help("Sets the level of verbosity. Repeat to increase level (capped at 2)."),
         )
         .subcommand(SubCommand::with_name("gen")
@@ -128,7 +130,7 @@ fn process_args() -> Result<(AppAction, Config), String> {
                     .value_name("XFORM_NAME")
                     .help("Adds a transformation to the generated strings.")
                     .takes_value(true)
-                    .possible_values(&["u_after_q", "title_case"])
+                    .possible_values(&["u_after_q", "lower_case", "upper_case", "title_case"])
                     .multiple(true)
             )
             .arg(

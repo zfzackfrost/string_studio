@@ -5,6 +5,8 @@ pub use std::convert::TryFrom;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Xform {
     UAfterQ,
+    LowerCase,
+    UpperCase,
     TitleCase,
 }
 
@@ -26,6 +28,14 @@ impl Xform {
         (*UAFTERQ_RE).replace_all(s, do_replace).into_owned()
     }
 
+    fn xform_lowercase(s: &str) -> String {
+        s.to_lowercase()
+    }
+    
+    fn xform_uppercase(s: &str) -> String {
+        s.to_uppercase()
+    }
+    
     fn xform_titlecase(s: &str) -> String {
         lazy_static! {
             static ref TITLECASE_RE: Regex = Regex::new(r"\b(\w)(\w*)\b").unwrap();
@@ -47,9 +57,12 @@ impl Xform {
 
         (*TITLECASE_RE).replace_all(s, do_replace).into_owned()
     }
+
     pub fn xform(&self, s: &str) -> String {
         match self {
             Self::UAfterQ => Self::xform_uafterq(s),
+            Self::LowerCase => Self::xform_lowercase(s),
+            Self::UpperCase => Self::xform_uppercase(s),
             Self::TitleCase => Self::xform_titlecase(s),
         }
     }
@@ -59,9 +72,12 @@ impl TryFrom<&str> for Xform {
     type Error = &'static str;
 
     fn try_from(name: &str) -> Result<Self, Self::Error> {
+        let name = name.trim();
         match name {
             "u_after_q" => Ok(Self::UAfterQ),
             "title_case" => Ok(Self::TitleCase),
+            "lower_case" => Ok(Self::LowerCase),
+            "upper_case" => Ok(Self::UpperCase),
             _ => Err("Invalid transform type!"),
         }
     }
