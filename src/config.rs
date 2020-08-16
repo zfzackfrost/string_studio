@@ -41,7 +41,7 @@ fn default_fragments() -> Vec<Fragment> {
         static ref LOWER_CONS_RE: String = String::from("(b|c|d|f|g|h|j|k|l|m|n|p|q|r|s|t|v|w|x|y|z)");
         static ref UPPER_CONS_RE: String = String::from("(B|C|D|F|G|H|J|K|L|M|N|P|Q|R|S|T|V|W|X|Y|Z)");
         static ref VOWEL_CLUSTER_RE: String = String::from("(ae|ai|ou|ia|ei|ou|ou|ui|iu|ea|oi|ua|au|ao|oa|ee|oo)");
-        static ref SYLLABLE_RE: String = format!("({}({}|{}){}?)", *LOWER_CONS_RE, *VOWEL_CLUSTER_RE, *LOWER_VOWELS_RE, *LOWER_CONS_RE);
+        static ref SYLLABLE_RE: String = format!("({0}({1}|{2}){0}?)", *LOWER_CONS_RE, *VOWEL_CLUSTER_RE, *LOWER_VOWELS_RE);
     }
     vec![
         Fragment::new("lower_vowel", &(*LOWER_VOWELS_RE), "Lowercase vowels, excluding `y`"),
@@ -50,6 +50,7 @@ fn default_fragments() -> Vec<Fragment> {
         Fragment::new("upper_vowel_y", &(*UPPER_VOWELS_Y_RE), "Uppercase vowels, including `y`"),
         Fragment::new("lower_cons", &(*LOWER_CONS_RE), "Lowercase consonants."),
         Fragment::new("upper_cons", &(*UPPER_CONS_RE), "Uppercase consonants."),
+        Fragment::new("vowel_cluster", &(*VOWEL_CLUSTER_RE), "A cluster of readable vowels."),
         Fragment::new("syllable", &(*SYLLABLE_RE), "A basic syllable."),
     ]
 }
