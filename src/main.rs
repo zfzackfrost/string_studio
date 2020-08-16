@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{App, Arg, SubCommand};
 use std::str::FromStr;
 use string_studio::config::*;
 use string_studio::generate::*;
@@ -8,6 +8,13 @@ use string_studio::xform::Xform;
 
 use std::fs;
 use std::path::Path;
+
+#[derive(PartialEq)]
+enum AppAction {
+    Root,
+    Generate,
+    DumpConfig,
+}
 
 fn require_parsed_str<I: FromStr>(v: String, message: &str) -> Result<(), String> {
     if let Ok(_) = v.parse::<I>() {
@@ -62,42 +69,13 @@ fn create_config() -> Result<(), String> {
     Ok(())
 }
 
-fn process_args() -> Result<Config, String> {
+fn process_args() -> Result<(AppAction, Config), String> {
     let cfg_path = get_cfg_file_path();
 
     let matches = App::new("String Studio")
         .version("0.1.0")
         .author("Zachary Frost")
         .about("Generate randomized strings")
-        .arg(
-            Arg::with_name("number")
-                .short("n")
-                .long("number")
-                .value_name("INTEGER")
-                .help("Sets the number of strings to generate")
-                .takes_value(true)
-                .validator(require_u32_str)
-                .default_value("15"),
-        )
-        .arg(
-            Arg::with_name("seed")
-                .long("seed")
-                .value_name("INTEGER")
-                .help("Sets the random seed to use when generating strings. Set to 0 to auto pick seed.")
-                .takes_value(true)
-                .validator(require_u64_str)
-                .default_value("0"),
-        )
-        .arg(
-            Arg::with_name("xform")
-                .long("xform")
-                .short("x")
-                .value_name("XFORM_NAME")
-                .help("Adds a transformation to the generated strings.")
-                .takes_value(true)
-                .possible_values(&["u_after_q", "title_case"])
-                .multiple(true)
-        )
         .arg(
             {
                 let mut a = Arg::with_name("config")
@@ -115,67 +93,113 @@ fn process_args() -> Result<Config, String> {
             }
         )
         .arg(
-            Arg::with_name("format")
-                .short("f")
-                .long("format")
-                .value_name("FORMAT")
-                .help("Sets the output format")
-                .takes_value(true)
-                .possible_values(if cfg!(feature = "table_format") {
-                    &["simple", "table", "json", "csv"]
-                } else {
-                    &["simple", "json", "csv"]
-                })
-                .default_value("simple"),
-        )
-        .arg(
-            Arg::with_name("pattern")
-                .value_name("PATTERN")
-                .help("Sets the pattern to generate strings from. If multiple values are supplied, they will be concatenated. Pattern fragments must be separate values (one argument for each fragment).")
-                .required_unless("config")
-                .multiple(true)
-                .index(1),
-        )
-        .arg(
             Arg::with_name("verbosity")
                 .short("v")
                 .multiple(true)
                 .help("Sets the level of verbosity. Repeat to increase level (capped at 2)."),
         )
-        .arg(
-            Arg::with_name("pretty")
-                .long("pretty")
-                .help("Use nice formatting when `--format` is `json`"),
+        .subcommand(SubCommand::with_name("gen")
+            .version("0.1.0")
+            .author("Zachary Frost")
+            .about("Generate randomized strings")
+            .arg(
+                Arg::with_name("number")
+                    .short("n")
+                    .long("number")
+                    .value_name("INTEGER")
+                    .help("Sets the number of strings to generate")
+                    .takes_value(true)
+                    .validator(require_u32_str)
+                    .default_value("15"),
+            )
+            .arg(
+                Arg::with_name("seed")
+                    .long("seed")
+                    .value_name("INTEGER")
+                    .help("Sets the random seed to use when generating strings. Set to 0 to auto pick seed.")
+                    .takes_value(true)
+                    .validator(require_u64_str)
+                    .default_value("0"),
+            )
+            .arg(
+                Arg::with_name("xform")
+                    .long("xform")
+                    .short("x")
+                    .value_name("XFORM_NAME")
+                    .help("Adds a transformation to the generated strings.")
+                    .takes_value(true)
+                    .possible_values(&["u_after_q", "title_case"])
+                    .multiple(true)
+            )
+            .arg(
+                Arg::with_name("format")
+                    .short("f")
+                    .long("format")
+                    .value_name("FORMAT")
+                    .help("Sets the output format")
+                    .takes_value(true)
+                    .possible_values(if cfg!(feature = "table_format") {
+                        &["simple", "table", "json", "csv"]
+                    } else {
+                        &["simple", "json", "csv"]
+                    })
+                    .default_value("simple"),
+            )
+            .arg(
+                Arg::with_name("pattern")
+                    .value_name("PATTERN")
+                    .help("Sets the pattern to generate strings from. If multiple values are supplied, they will be concatenated. Pattern fragments must be separate values (one argument for each fragment).")
+                    .required_unless("config")
+                    .multiple(true)
+                    .index(1),
+            )
+            .arg(
+                Arg::with_name("pretty")
+                    .long("pretty")
+                    .help("Use nice formatting when `--format` is `json`"),
+            )
         )
-        .get_matches();
+    .get_matches();
 
-    {
-        let num = matches.value_of("number");
+    let verbosity = matches.occurrences_of("verbosity") as u8;
+
+    let action: AppAction = match matches.subcommand_name() {
+        Some("gen") => AppAction::Generate,
+        Some("dump_cfg") => AppAction::DumpConfig,
+        _ => AppAction::Root,
+    };
+
+    if let Some(sub_matches) = matches.subcommand_matches("gen") {
+        let num = sub_matches.value_of("number");
         if let None = num {
             return Err(String::from(
                 "No value found for `number`! This should not happen.",
             ));
         }
         let num = num.unwrap().parse::<u32>().unwrap_or(1);
-        let format = matches.value_of("format");
+        let format = sub_matches.value_of("format");
         if let None = format {
             return Err(String::from(
                 "No value found for `format`! This should not happen.",
             ));
         }
 
-        let verbosity = matches.occurrences_of("verbosity") as u8;
-        let pretty = matches.is_present("pretty");
-        let pattern = matches.values_of_lossy("pattern").unwrap_or(vec![]);
-        let xforms: Vec<Xform> = matches.values_of_lossy("xform").unwrap_or(vec![]).iter().map(|x| {
-            let s = x.as_str();
-            match Xform::try_from(s) {
-                Ok(x) => x,
-                Err(s) => panic!(s)
-            }
-        }).collect();
+        let pretty = sub_matches.is_present("pretty");
+        let pattern = sub_matches.values_of_lossy("pattern").unwrap_or(vec![]);
+        let xforms: Vec<Xform> = sub_matches
+            .values_of_lossy("xform")
+            .unwrap_or(vec![])
+            .iter()
+            .map(|x| {
+                let s = x.as_str();
+                match Xform::try_from(s) {
+                    Ok(x) => x,
+                    Err(s) => panic!(s),
+                }
+            })
+            .collect();
 
-        let seed = matches
+        let seed = sub_matches
             .value_of("seed")
             .unwrap_or("")
             .parse::<u64>()
@@ -196,13 +220,14 @@ fn process_args() -> Result<Config, String> {
                 if let Ok(mut c) = toml::from_str::<Config>(s.as_str()) {
                     c.verbosity = Verbosity::from(verbosity); // Ignore verbosity in config file
                     c.pattern = pattern; // Ignore pattern in config file
-                    c.seed = seed;// Ignore seed in config file
+                    c.seed = seed; // Ignore seed in config file
                     c.xforms = xforms;
+                    c.number = num;
 
-                    if matches.occurrences_of("format") > 0 {
+                    if sub_matches.occurrences_of("format") > 0 {
                         c.format = OutputFormat::from(format.unwrap());
                     }
-                    if matches.is_present("pretty") {
+                    if sub_matches.is_present("pretty") {
                         c.pretty = true;
                     }
 
@@ -216,23 +241,30 @@ fn process_args() -> Result<Config, String> {
         } else {
             cmd_config
         };
-        Ok(cfg)
+
+        Ok((action, cfg))
+    } else {
+        Err(String::from("Failed to process cmd args!"))
     }
 }
 
 fn run() -> Result<(), String> {
     create_config()?;
-    let config = process_args()?;
+    let (action, config) = process_args()?;
 
-    println_v2(&config, format!("Full Configuration: {}", config).as_str());
-    println_v1(
-        &config,
-        format!("Generating {} strings...\n", config.number).as_str(),
-    );
-
-    let strings = generate(&config)?;
-
-    output(&config, &strings)?;
+    match action {
+        AppAction::Generate => {
+            println_v2(&config, format!("Full Configuration: {}", config).as_str());
+            println_v1(
+                &config,
+                format!("Generating {} strings...\n", config.number).as_str(),
+            );
+            let strings = generate(&config)?;
+            output(&config, &strings)?;
+        }
+        AppAction::DumpConfig => {}
+        _ => {}
+    }
 
     Ok(())
 }
