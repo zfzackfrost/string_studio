@@ -8,6 +8,8 @@ pub use self::output_format::*;
 pub use self::verbose::*;
 pub use self::fragment::*;
 
+pub use crate::xform::*;
+
 
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +27,10 @@ fn default_number() -> u32 {
 fn default_pretty() -> bool {
     false
 }
+fn default_xforms() -> Vec<Xform> {
+    vec![]
+}
+
 
 fn default_fragments() -> Vec<Fragment> {
     lazy_static! {
@@ -70,6 +76,9 @@ pub struct Config {
 
     #[serde(default)]
     pub fragments: Vec<Fragment>,
+
+    #[serde(default, skip)]
+    pub xforms: Vec<Xform>
 }
 
 impl Display for Config {
@@ -90,7 +99,8 @@ impl Default for Config {
             pattern: Default::default(),
             pretty: default_pretty(),
             seed: 0,
-            fragments: default_fragments()
+            fragments: default_fragments(),
+            xforms: default_xforms(),
         }
     }
 }

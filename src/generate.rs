@@ -16,8 +16,8 @@ fn assemble_pattern(config: &Config) -> Result<String, String> {
                 let mut s: String = Default::default();
                 for i in &config.fragments {
                     if i.name == p_name {
-                       s = i.pattern.clone();
-                       break;
+                        s = i.pattern.clone();
+                        break;
                     }
                 }
                 s.clone()
@@ -27,6 +27,13 @@ fn assemble_pattern(config: &Config) -> Result<String, String> {
         }
     }
     Ok(pat)
+}
+fn apply_xforms(config: &Config, s: String) -> String {
+    let mut s = s;
+    for x in &config.xforms {
+        s = x.xform(&s);
+    }
+    s
 }
 
 pub fn generate(config: &Config) -> Result<Vec<String>, String> {
@@ -39,10 +46,10 @@ pub fn generate(config: &Config) -> Result<Vec<String>, String> {
     if let Some(gen) = RegexGen::new(&pat) {
         let mut strings: Vec<String> = Vec::new();
 
-        for _ in 0 .. config.number {
+        for _ in 0..config.number {
             match gen.randomize(&mut rng) {
-                Ok(s) => strings.push(s),
-                Err(_) => return Err(String::from("Failed to generate string!"))
+                Ok(s) => strings.push(apply_xforms(config, s)),
+                Err(_) => return Err(String::from("Failed to generate string!")),
             }
         }
         Ok(strings)

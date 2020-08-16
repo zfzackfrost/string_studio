@@ -4,6 +4,8 @@ use string_studio::config::*;
 use string_studio::generate::*;
 use string_studio::output::*;
 
+use string_studio::xform::Xform;
+
 use std::fs;
 use std::path::Path;
 
@@ -87,6 +89,16 @@ fn process_args() -> Result<Config, String> {
                 .default_value("0"),
         )
         .arg(
+            Arg::with_name("xform")
+                .long("xform")
+                .short("x")
+                .value_name("XFORM_NAME")
+                .help("Adds a transformation to the generated strings.")
+                .takes_value(true)
+                .possible_values(&["u_after_q", "title_case"])
+                .multiple(true)
+        )
+        .arg(
             {
                 let mut a = Arg::with_name("config")
                     .short("c")
@@ -119,7 +131,7 @@ fn process_args() -> Result<Config, String> {
         .arg(
             Arg::with_name("pattern")
                 .value_name("PATTERN")
-                .help("Sets the pattern generate strings from. If multiple values are supplied, they will be concatenated. Pattern fragments must be separate values (one argument for each fragment).")
+                .help("Sets the pattern to generate strings from. If multiple values are supplied, they will be concatenated. Pattern fragments must be separate values (one argument for each fragment).")
                 .required_unless("config")
                 .multiple(true)
                 .index(1),
@@ -155,6 +167,14 @@ fn process_args() -> Result<Config, String> {
         let verbosity = matches.occurrences_of("verbosity") as u8;
         let pretty = matches.is_present("pretty");
         let pattern = matches.values_of_lossy("pattern").unwrap_or(vec![]);
+        let xforms: Vec<Xform> = matches.values_of_lossy("xform").unwrap_or(vec![]).iter().map(|x| {
+            let s = x.as_str();
+            match Xform::try_from(s) {
+                Ok(x) => x,
+                Err(s) => panic!(s)
+            }
+        }).collect();
+
         let seed = matches
             .value_of("seed")
             .unwrap_or("")
@@ -169,13 +189,15 @@ fn process_args() -> Result<Config, String> {
             pretty: pretty,
             fragments: Default::default(),
             seed,
+            xforms: Default::default(),
         };
         let cfg = if let Some(cfg_path) = matches.value_of("config") {
             if let Ok(s) = fs::read_to_string(cfg_path) {
                 if let Ok(mut c) = toml::from_str::<Config>(s.as_str()) {
                     c.verbosity = Verbosity::from(verbosity); // Ignore verbosity in config file
                     c.pattern = pattern; // Ignore pattern in config file
-                    c.seed = seed; // Ignore seed in config file
+                    c.seed = seed;// Ignore seed in config file
+                    c.xforms = xforms;
 
                     if matches.occurrences_of("format") > 0 {
                         c.format = OutputFormat::from(format.unwrap());

@@ -23,6 +23,8 @@ rand_xoshiro = { version = "0.4.0" }
 encoding = {version = "0.2.33"}
 lazy_static = {version = "1.4"}
 regex-syntax = { version = "0.6.18" }
+regex = { version = "1" }
+Inflector = { version = "0.11.4" }
 
 # Optional
 termion = { version = "1.5", optional = true }
